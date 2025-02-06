@@ -1,7 +1,7 @@
 
 // Fontes para A-Z e 0-9. Os caracteres tem 8x8 pixels
 
-
+// O objetivo é adicionar os caracteres da tabela ASCII e definir o quadro de caractere monoespaçado para 6x8
 static uint8_t font[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Nothing
 0x3e, 0x41, 0x41, 0x49, 0x41, 0x41, 0x3e, 0x00, //0
