@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = 'build/Interfaces-Embarcatech.uf2'
+elf = 'build/Interfaces-Embarcatech.elf'
+gdbServerPort=3333
