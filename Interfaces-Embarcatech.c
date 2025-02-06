@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 #include "hardware/uart.h"
@@ -6,19 +5,19 @@
 // I2C defines
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
 // Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
+#define I2C_PORT i2c1
+#define I2C_SDA 14
+#define I2C_SCL 15
 
 // UART defines
 // By default the stdout UART is `uart0`, so we will use the second one
-#define UART_ID uart1
+#define UART_ID uart0
 #define BAUD_RATE 115200
 
 // Use pins 4 and 5 for UART1
 // Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define UART_TX_PIN 4
-#define UART_RX_PIN 5
+#define UART_TX_PIN 0
+#define UART_RX_PIN 1
 
 
 
@@ -51,7 +50,7 @@ int main()
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
 
     while (true) {
-        printf("Hello, world!\n");
+        uart_puts(UART_ID, " Hello, UART!\n");
         sleep_ms(1000);
     }
 }
