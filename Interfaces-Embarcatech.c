@@ -128,7 +128,7 @@ int main()
     
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
 
-    bool cor = true;
+    bool cor = false;
     while (true) {
         cor = !cor;
         // Atualiza o conteúdo do display com animações
@@ -136,7 +136,7 @@ int main()
         ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
         ssd1306_draw_string(&ssd, "CEPEDI   TIC37", 8, 10); // Desenha uma string
         ssd1306_draw_string(&ssd, "EMBARCATECH", 20, 30); // Desenha uma string
-        ssd1306_draw_string(&ssd, "PROF WILTON", 15, 48); // Desenha uma string      
+        ssd1306_draw_string(&ssd, "THIAGO SOUSA", 15, 48); // Desenha uma string      
         ssd1306_send_data(&ssd); // Atualiza o display
     }
 }
