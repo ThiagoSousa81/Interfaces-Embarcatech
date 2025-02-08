@@ -44,6 +44,8 @@ pico_set_program_version(Interfaces-Embarcatech "0.1")
 pico_enable_stdio_uart(Interfaces-Embarcatech 1)
 pico_enable_stdio_usb(Interfaces-Embarcatech 0)
 
+pico_generate_pio_header(Interfaces-Embarcatech ${CMAKE_CURRENT_LIST_DIR}/pio_matrix.pio)
+
 # Add the standard library to the build
 target_link_libraries(Interfaces-Embarcatech
         pico_stdlib)
@@ -56,7 +58,7 @@ target_include_directories(Interfaces-Embarcatech PRIVATE
 # Add any user requested libraries
 target_link_libraries(Interfaces-Embarcatech 
         hardware_i2c
-        
+        hardware_pio
         )
 
 pico_add_extra_outputs(Interfaces-Embarcatech)

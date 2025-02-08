@@ -5,6 +5,10 @@
 // Bibliotecas para o display
 #include "inc/ssd1306.h"
 #include "inc/font.h"
+//Bibliotecas para a matriz
+#include "hardware/clocks.h"
+#include "hardware/pio.h"
+#include "pio_matrix.pio.h"
 
 // I2C defines
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
