@@ -21,9 +21,6 @@
 #define endereco 0x3C
 
 
-// Valor inicial que aparece na matriz de LEDs
-int display_Value = 0;
-
 // UART defines
 // By default the stdout UART is `uart0`, so we will use the second one
 #define UART_ID uart0
@@ -110,7 +107,7 @@ void npClear()
 }
 
 // Função para definir qual número mostrar na tela
-void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
+void setDisplayNum(char num, const uint8_t r, const uint8_t g, const uint8_t b)
 {
 /*  Gabarito do Display
     24, 23, 22, 21, 20
@@ -122,7 +119,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
     npClear();
     switch (num)
     {
-    case 0: // Número 0
+    case '0': // Número 0
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b);
@@ -136,7 +133,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(22, r, g, b);
         npSetLED(23, r, g, b);
         break;
-    case 1: // Número 1
+    case '1': // Número 1
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b);
@@ -146,7 +143,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(17, r, g, b);
         npSetLED(22, r, g, b);
         break;
-    case 2: // Número 2
+    case '2': // Número 2
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b);
@@ -159,7 +156,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(22, r, g, b);
         npSetLED(23, r, g, b);
         break;
-    case 3: // Número 3
+    case '3': // Número 3
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b);
@@ -172,7 +169,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(22, r, g, b);
         npSetLED(23, r, g, b);
         break;
-    case 4: // Número 4
+    case '4': // Número 4
         npSetLED(2, r, g, b);
         npSetLED(5, r, g, b);
         npSetLED(6, r, g, b);
@@ -184,7 +181,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(17, r, g, b);
         npSetLED(22, r, g, b);
         break;
-    case 5: // Número 5
+    case '5': // Número 5
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b);        
@@ -197,7 +194,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(22, r, g, b);
         npSetLED(23, r, g, b);
         break;
-    case 6: // Número 6
+    case '6': // Número 6
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b); 
@@ -211,7 +208,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(22, r, g, b);
         npSetLED(23, r, g, b);
         break;
-    case 7: // Número 7
+    case '7': // Número 7
         npSetLED(1, r, g, b);
         npSetLED(8, r, g, b);
         npSetLED(11, r, g, b);
@@ -220,7 +217,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(22, r, g, b);
         npSetLED(23, r, g, b);        
         break;
-    case 8: // Número 8
+    case '8': // Número 8
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b);
@@ -235,7 +232,7 @@ void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(21, r, g, b);
         npSetLED(23, r, g, b);
         break;
-    case 9: // Número 9
+    case '9': // Número 9
         npSetLED(1, r, g, b);
         npSetLED(2, r, g, b);
         npSetLED(3, r, g, b);        
@@ -357,15 +354,18 @@ int main()
     ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
     ssd1306_draw_string(&ssd, "0", 64, 30); // Desenha uma string
     ssd1306_send_data(&ssd); // Atualiza o display
-
-    setDisplayNum(display_Value, 100, 100, 100);
+    
     while (true) {                        
         if (stdio_usb_connected())
         { // Certifica-se de que o USB está conectado
             char c;
             if (scanf("%c", &c) == 1)
             { // Lê caractere da entrada padrão
-                printf("Recebido: '%c'\n", c);
+                ssd1306_draw_char(&ssd, c, 64, 30); 
+                ssd1306_send_data(&ssd); // Atualiza o display
+
+                setDisplayNum(c, 100, 100, 100);
+                
             }
         }
     }
