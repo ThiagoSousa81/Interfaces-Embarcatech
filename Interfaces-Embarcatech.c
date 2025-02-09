@@ -19,6 +19,7 @@
 #define I2C_SDA 14
 #define I2C_SCL 15
 #define endereco 0x3C
+ssd1306_t SSD; // Inicializa a estrutura do display
 
 
 // UART defines
@@ -40,6 +41,38 @@ const uint BUTTON_B = 6; // Pino GPIO do botão B
 // O tipo volatile é para a variável ser acessada em modo assíncrono
 static volatile uint32_t last_time = 0;
 static volatile bool led_state_G = false, led_state_B = false;
+
+
+void i2c_initi()
+{
+    // I2C Initialisation. Using it at 400Khz.
+    i2c_init(I2C_PORT, 400*1000);
+    
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C); // Set the GPIO pin function to I2C
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C); // Set the GPIO pin function to I2C
+    gpio_pull_up(I2C_SDA); // Pull up the data line
+    gpio_pull_up(I2C_SCL); // Pull up the clock line
+
+    
+    ssd1306_init(&SSD, WIDTH, HEIGHT, false, endereco, I2C_PORT); // Inicializa o display
+    ssd1306_config(&SSD); // Configura o display
+    ssd1306_send_data(&SSD); // Envia os dados para o display
+
+    // Limpa o display. O display inicia com todos os pixels apagados.
+    ssd1306_fill(&SSD, false);
+    ssd1306_send_data(&SSD);
+    // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
+
+    bool cor = false;
+    cor = !cor;
+    ssd1306_fill(&SSD, !cor); // Limpa o display
+    ssd1306_rect(&SSD, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
+    ssd1306_draw_string(&SSD, "VERDE OFF", 24, 18); 
+    ssd1306_draw_string(&SSD, "CHAR 0", 24, 30); // Desenha uma string
+    ssd1306_draw_string(&SSD, "AZUL OFF", 24, 42); 
+    ssd1306_send_data(&SSD); // Atualiza o display
+}
+
 
 /*========================Funções da matriz========================*/
 
@@ -246,7 +279,7 @@ void setDisplayNum(char num, const uint8_t r, const uint8_t g, const uint8_t b)
         npSetLED(22, r, g, b);
         npSetLED(23, r, g, b);
         break;
-    }
+    } // default desnecessário
     npUpdate(); // Atualiza o display após colocar o número
 }
 
@@ -267,6 +300,15 @@ void gpio_irq_handler(uint gpio, uint32_t events)
 
             printf("Estado do LED verde alterado!");
             // Enviar o que acontece para o display
+            if (led_state_G)
+            {
+                ssd1306_draw_string(&SSD, "VERDE ON ", 24, 18); 
+            }
+            else
+            {
+                ssd1306_draw_string(&SSD, "VERDE OFF", 24, 18); 
+            }            
+            ssd1306_send_data(&SSD); // Atualiza o display
             
             last_time = current_time; // Atualiza o tempo do último evento
         }
@@ -277,6 +319,15 @@ void gpio_irq_handler(uint gpio, uint32_t events)
 
             printf("Estado do LED azul alterado!");
             // Enviar o que acontece para o display
+            if (led_state_B)
+            {
+                ssd1306_draw_string(&SSD, "AZUL ON ", 24, 42); 
+            }
+            else
+            {
+                ssd1306_draw_string(&SSD, "AZUL OFF", 24, 42); 
+            }
+            ssd1306_send_data(&SSD); // Atualiza o display
             
             last_time = current_time; // Atualiza o tempo do último evento
         }
@@ -310,29 +361,6 @@ int main()
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
 
-
-
-
-    // I2C Initialisation. Using it at 400Khz.
-    i2c_init(I2C_PORT, 400*1000);
-    
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C); // Set the GPIO pin function to I2C
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C); // Set the GPIO pin function to I2C
-    gpio_pull_up(I2C_SDA); // Pull up the data line
-    gpio_pull_up(I2C_SCL); // Pull up the clock line
-
-    ssd1306_t ssd; // Inicializa a estrutura do display
-    ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco, I2C_PORT); // Inicializa o display
-    ssd1306_config(&ssd); // Configura o display
-    ssd1306_send_data(&ssd); // Envia os dados para o display
-
-    // Limpa o display. O display inicia com todos os pixels apagados.
-    ssd1306_fill(&ssd, false);
-    ssd1306_send_data(&ssd);
-    // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
-
-
-
     // Set up our UART
     uart_init(UART_ID, BAUD_RATE);
     // Set the TX and RX pins by using the function select on the GPIO
@@ -348,21 +376,16 @@ int main()
     
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
 
-    bool cor = false;
-    cor = !cor;
-    ssd1306_fill(&ssd, !cor); // Limpa o display
-    ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
-    ssd1306_draw_string(&ssd, "0", 64, 30); // Desenha uma string
-    ssd1306_send_data(&ssd); // Atualiza o display
     
+    i2c_initi();
     while (true) {                        
         if (stdio_usb_connected())
         { // Certifica-se de que o USB está conectado
             char c;
             if (scanf("%c", &c) == 1)
             { // Lê caractere da entrada padrão
-                ssd1306_draw_char(&ssd, c, 64, 30); 
-                ssd1306_send_data(&ssd); // Atualiza o display
+                ssd1306_draw_char(&SSD, c, 64, 30); 
+                ssd1306_send_data(&SSD); // Atualiza o display
 
                 setDisplayNum(c, 100, 100, 100);
                 
