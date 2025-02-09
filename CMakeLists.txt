@@ -42,7 +42,7 @@ pico_set_program_version(Interfaces-Embarcatech "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(Interfaces-Embarcatech 1)
-pico_enable_stdio_usb(Interfaces-Embarcatech 0)
+pico_enable_stdio_usb(Interfaces-Embarcatech 1)
 
 pico_generate_pio_header(Interfaces-Embarcatech ${CMAKE_CURRENT_LIST_DIR}/ws2818b.pio)
 

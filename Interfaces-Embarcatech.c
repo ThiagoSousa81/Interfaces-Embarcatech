@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
-#include "hardware/uart.h"
+//#include "hardware/uart.h"
 // Bibliotecas para o display
 #include "inc/ssd1306.h"
 #include "inc/font.h"
@@ -9,7 +9,8 @@
 #include "hardware/pio.h"
 #include "ws2818b.pio.h"
 
-
+#define LED_PIN 7        // Pino GPIO conectado aos LEDs
+#define LED_COUNT 25     // Número de LEDs na matriz
 
 // I2C defines
 // This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
@@ -18,6 +19,10 @@
 #define I2C_SDA 14
 #define I2C_SCL 15
 #define endereco 0x3C
+
+
+// Valor inicial que aparece na matriz de LEDs
+int display_Value = 0;
 
 // UART defines
 // By default the stdout UART is `uart0`, so we will use the second one
@@ -38,6 +43,217 @@ const uint BUTTON_B = 6; // Pino GPIO do botão B
 // O tipo volatile é para a variável ser acessada em modo assíncrono
 static volatile uint32_t last_time = 0;
 static volatile bool led_state_G = false, led_state_B = false;
+
+/*========================Funções da matriz========================*/
+
+// Estrutura para representar um pixel com componentes RGB
+struct pixel_t
+{
+    uint8_t G, R, B; // Componentes de cor: Verde, Vermelho e Azul
+};
+
+typedef struct pixel_t pixel_t; // Alias para a estrutura pixel_t
+typedef pixel_t npLED_t;        // Alias para facilitar o uso no contexto de LEDs
+
+npLED_t leds[LED_COUNT]; // Array para armazenar o estado de cada LED
+PIO np_pio;              // Variável para referenciar a instância PIO usada
+uint sm;                 // Variável para armazenar o número da máquina de estado (State Machine)
+
+// Função para inicializar o PIO para controle dos LEDs
+void npInit(uint pin)
+{
+    uint offset = pio_add_program(pio0, &ws2818b_program); // Carregar o programa PIO
+    np_pio = pio0;                                         // Usar o primeiro bloco PIO
+
+    sm = pio_claim_unused_sm(np_pio, false); // Tentar usar uma state machine do pio0
+    if (sm < 0)                              // Se não houver disponível no pio0
+    {
+        np_pio = pio1;                          // Mudar para o pio1
+        sm = pio_claim_unused_sm(np_pio, true); // Usar uma state machine do pio1
+    }
+
+    ws2818b_program_init(np_pio, sm, offset, pin, 800000.f); // Inicializar state machine para LEDs
+
+    // Inicializar todos os LEDs como apagados
+    for (uint i = 0; i < LED_COUNT; ++i) 
+    {
+        leds[i].R = 0;
+        leds[i].G = 0;
+        leds[i].B = 0;
+    }
+}
+
+// Função para atualizar os LEDs no hardware
+void npUpdate()
+{
+    for (uint i = 0; i < LED_COUNT; ++i) // Iterar sobre todos os LEDs
+    {
+        pio_sm_put_blocking(np_pio, sm, leds[i].R); // Enviar componente vermelho
+        pio_sm_put_blocking(np_pio, sm, leds[i].G); // Enviar componente verde        
+        pio_sm_put_blocking(np_pio, sm, leds[i].B); // Enviar componente azul
+    }
+}
+
+// Função para definir a cor de um LED específico
+void npSetLED(const uint index, const uint8_t r, const uint8_t g, const uint8_t b)
+{
+    leds[index].R = r; // Definir componente vermelho
+    leds[index].G = g; // Definir componente verde
+    leds[index].B = b; // Definir componente azul
+}
+
+// Função para limpar (apagar) todos os LEDs
+void npClear()
+{
+    for (uint i = 0; i < LED_COUNT; ++i) // Iterar sobre todos os LEDs
+        npSetLED(i, 0, 0, 0);            // Definir cor como preta (apagado)
+}
+
+// Função para definir qual número mostrar na tela
+void setDisplayNum(int num, const uint8_t r, const uint8_t g, const uint8_t b)
+{
+/*  Gabarito do Display
+    24, 23, 22, 21, 20
+    15, 16, 17, 18, 19
+    14, 13, 12, 11, 10
+    05, 06, 07, 08, 09
+    04, 03, 02, 01, 00
+*/
+    npClear();
+    switch (num)
+    {
+    case 0: // Número 0
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b);
+        npSetLED(6, r, g, b);
+        npSetLED(8, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(13, r, g, b);
+        npSetLED(16, r, g, b);
+        npSetLED(18, r, g, b);        
+        npSetLED(21, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(23, r, g, b);
+        break;
+    case 1: // Número 1
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b);
+        npSetLED(7, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(16, r, g, b);
+        npSetLED(17, r, g, b);
+        npSetLED(22, r, g, b);
+        break;
+    case 2: // Número 2
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b);
+        npSetLED(6, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(13, r, g, b);
+        npSetLED(18, r, g, b);
+        npSetLED(21, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(23, r, g, b);
+        break;
+    case 3: // Número 3
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b);
+        npSetLED(8, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(13, r, g, b);
+        npSetLED(18, r, g, b);
+        npSetLED(21, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(23, r, g, b);
+        break;
+    case 4: // Número 4
+        npSetLED(2, r, g, b);
+        npSetLED(5, r, g, b);
+        npSetLED(6, r, g, b);
+        npSetLED(7, r, g, b);
+        npSetLED(8, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(14, r, g, b);
+        npSetLED(16, r, g, b);
+        npSetLED(17, r, g, b);
+        npSetLED(22, r, g, b);
+        break;
+    case 5: // Número 5
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b);        
+        npSetLED(8, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(13, r, g, b);
+        npSetLED(16, r, g, b); 
+        npSetLED(21, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(23, r, g, b);
+        break;
+    case 6: // Número 6
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b); 
+        npSetLED(6, r, g, b);
+        npSetLED(8, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(13, r, g, b);
+        npSetLED(16, r, g, b); 
+        npSetLED(21, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(23, r, g, b);
+        break;
+    case 7: // Número 7
+        npSetLED(1, r, g, b);
+        npSetLED(8, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(18, r, g, b);
+        npSetLED(21, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(23, r, g, b);        
+        break;
+    case 8: // Número 8
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b);
+        npSetLED(6, r, g, b);
+        npSetLED(8, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(13, r, g, b);
+        npSetLED(16, r, g, b);
+        npSetLED(18, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(21, r, g, b);
+        npSetLED(23, r, g, b);
+        break;
+    case 9: // Número 9
+        npSetLED(1, r, g, b);
+        npSetLED(2, r, g, b);
+        npSetLED(3, r, g, b);        
+        npSetLED(8, r, g, b);
+        npSetLED(11, r, g, b);
+        npSetLED(12, r, g, b);
+        npSetLED(13, r, g, b);
+        npSetLED(16, r, g, b);
+        npSetLED(18, r, g, b);
+        npSetLED(21, r, g, b);
+        npSetLED(22, r, g, b);
+        npSetLED(23, r, g, b);
+        break;
+    }
+    npUpdate(); // Atualiza o display após colocar o número
+}
+
+/*=====================================Interrupções=====================================*/
 
 // Função de interrupção IRQ com debouncing dos botões A e B
 void gpio_irq_handler(uint gpio, uint32_t events)
@@ -74,6 +290,8 @@ void gpio_irq_handler(uint gpio, uint32_t events)
 int main()
 {
     stdio_init_all(); // Inicializar a comunicação serial
+
+    npInit(LED_PIN);  // Inicializar os LEDs
 
     // Inicializar o pino GPIO13
     gpio_init(LED_PIN_G);
@@ -134,14 +352,21 @@ int main()
     // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
 
     bool cor = false;
-    while (true) {
-        cor = !cor;
-        // Atualiza o conteúdo do display com animações
-        ssd1306_fill(&ssd, !cor); // Limpa o display
-        ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
-        ssd1306_draw_string(&ssd, "CEPEDI   TIC37", 8, 10); // Desenha uma string
-        ssd1306_draw_string(&ssd, "EMBARCATECH", 20, 30); // Desenha uma string
-        ssd1306_draw_string(&ssd, "THIAGO SOUSA", 15, 48); // Desenha uma string      
-        ssd1306_send_data(&ssd); // Atualiza o display
+    cor = !cor;
+    ssd1306_fill(&ssd, !cor); // Limpa o display
+    ssd1306_rect(&ssd, 3, 3, 122, 58, cor, !cor); // Desenha um retângulo
+    ssd1306_draw_string(&ssd, "0", 64, 30); // Desenha uma string
+    ssd1306_send_data(&ssd); // Atualiza o display
+
+    setDisplayNum(display_Value, 100, 100, 100);
+    while (true) {                        
+        if (stdio_usb_connected())
+        { // Certifica-se de que o USB está conectado
+            char c;
+            if (scanf("%c", &c) == 1)
+            { // Lê caractere da entrada padrão
+                printf("Recebido: '%c'\n", c);
+            }
+        }
     }
 }
