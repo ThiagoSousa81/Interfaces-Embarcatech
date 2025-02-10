@@ -1,6 +1,8 @@
-#include "ssd1306.h"
-#include "font.h"
+#include "ssd1306.h" // biblioteca que controla o display
+#include "font.h" // biblioteca que contém as fontes
 
+
+// método para inicializar o display
 void ssd1306_init(ssd1306_t *ssd, uint8_t width, uint8_t height, bool external_vcc, uint8_t address, i2c_inst_t *i2c) {
   ssd->width = width;
   ssd->height = height;
@@ -160,18 +162,20 @@ void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y)
   char ver=c;
   if (c >= 'A' && c <= 'Z')
   {
-    index = (c - 'A' + 11) * 8; // Para letras maiúsculas
+    index = (c - 'A' + 11) * 8; // Deslocamento para letras maiúsculas
   }else  if (c >= '0' && c <= '9')
   {
-    index = (c - '0' + 1) * 8; // Adiciona o deslocamento necessário
+    index = (c - '0' + 1) * 8; // Deslocamento para números
   }
-  else if (c >= 'a' && c <= 'z') {
-    index = (c - 'a'+ 37) * 8;
+  else if (c >= 'a' && c <= 'z') 
+  { 
+    index = (c - 'a'+ 37) * 8; // Deslocamento para letras minúsculas
   } 
   
+  // Constroi o caractere 8x8 com base na matriz definida
   for (uint8_t i = 0; i < 8; ++i)
   {
-    uint8_t line = font[index + i];
+    uint8_t line = font[index + i]; 
     for (uint8_t j = 0; j < 8; ++j)
     {
       ssd1306_pixel(ssd, x + i, y + j, line & (1 << j));

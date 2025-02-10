@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/i2c.h"
+#include "hardware/i2c.h" // Biblioteca do I²C
 #include "hardware/uart.h"
 // Bibliotecas para o display
 #include "inc/ssd1306.h"
@@ -9,29 +9,24 @@
 #include "hardware/pio.h"
 #include "ws2818b.pio.h"
 
+// Declarações da matriz
 #define LED_PIN 7        // Pino GPIO conectado aos LEDs
 #define LED_COUNT 25     // Número de LEDs na matriz
 
-// I2C defines
-// This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
+// Declarações do I2C1 nos pinos 14 e 15
 #define I2C_PORT i2c1
-#define I2C_SDA 14
-#define I2C_SCL 15
-#define endereco 0x3C
+#define I2C_SDA 14 // SDA
+#define I2C_SCL 15 // SCL
+#define endereco 0x3C // Endereço físico do display
 ssd1306_t SSD; // Inicializa a estrutura do display
 
-
-// UART defines
-// By default the stdout UART is `uart0`, so we will use the second one
+// Definições da  UART
 #define UART_ID uart0
 #define BAUD_RATE 115200
+#define UART_TX_PIN 0 // TX
+#define UART_RX_PIN 1 // RX
 
-// Use pins 4 and 5 for UART1
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define UART_TX_PIN 0
-#define UART_RX_PIN 1
-
+// Definições do LED_RGB
 #define LED_PIN_G 11   // Pino do verde do LED RGB
 #define LED_PIN_B 12   // Pino do azul do LED RGB
 const uint BUTTON_A = 5; // Pino GPIO do botão A
@@ -42,7 +37,7 @@ const uint BUTTON_B = 6; // Pino GPIO do botão B
 static volatile uint32_t last_time = 0;
 static volatile bool led_state_G = false, led_state_B = false;
 
-
+// Método para inicializar o I2C
 void i2c_initi()
 {
     // I2C Initialisation. Using it at 400Khz.
@@ -334,20 +329,21 @@ void gpio_irq_handler(uint gpio, uint32_t events)
     }
 }
 
-
+/*===========================Método principal===========================*/
 int main()
 {
     stdio_init_all(); // Inicializar a comunicação serial
 
     npInit(LED_PIN);  // Inicializar os LEDs
 
-    // Inicializar o pino GPIO13
+    // Inicializa o LED RGB
     gpio_init(LED_PIN_G);
     gpio_set_dir(LED_PIN_G, true);
 
     gpio_init(LED_PIN_B);
     gpio_set_dir(LED_PIN_B, true);
 
+    // Inicializa os botões
     gpio_init(BUTTON_A);
     gpio_set_dir(BUTTON_A, GPIO_IN); // Configura o pino como entrada
     gpio_pull_up(BUTTON_A);          // Habilita o pull-up interno
@@ -361,35 +357,38 @@ int main()
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
 
-    // Set up our UART
-    uart_init(UART_ID, BAUD_RATE);
-    // Set the TX and RX pins by using the function select on the GPIO
-    // Set datasheet for more information on function select
+    // Inicializa  a UART
+    uart_init(UART_ID, BAUD_RATE);    
     gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
     
-    // Use some the various UART functions to send out data
-    // In a default system, printf will also output via the default UART
-    
-    // Send out a string, with CR/LF conversions
-    uart_puts(UART_ID, " Hello, UART!\n");
-    
-    // For more examples of UART use see https://github.com/raspberrypi/pico-examples/tree/master/uart
+    uart_puts(UART_ID, " Hello, UART!");
 
-    
+    // Chama a inicialização do I2C
     i2c_initi();
     while (true) {                        
         if (stdio_usb_connected())
         { // Certifica-se de que o USB está conectado
             char c;
-            if (scanf("%c", &c) == 1)
+            if (scanf("%c", &c) == 1) // Certifica-se que entrou um caractere
             { // Lê caractere da entrada padrão
-                ssd1306_draw_char(&SSD, c, 64, 30); 
+                ssd1306_draw_char(&SSD, c, 64, 30); // Manda o caractere pro display
                 ssd1306_send_data(&SSD); // Atualiza o display
-
-                setDisplayNum(c, 100, 100, 100);
+                // Manda o caractere pra matriz de leds
+                setDisplayNum(c, 100, 100, 100); 
+                // Só é mostrado se for um número
                 
             }
+        }
+        else if (uart_is_readable(UART_ID))
+        {
+            char c = uart_getc(UART_ID);
+            uart_putc(UART_ID, c); // Devolve o caractere à UART
+            ssd1306_draw_char(&SSD, c, 64, 30); // Manda o caractere pro display
+            ssd1306_send_data(&SSD); // Atualiza o display
+            // Manda o caractere pra matriz de leds
+            setDisplayNum(c, 100, 100, 100); 
+            // Só é mostrado se for um número
         }
     }
 }
