@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
-//#include "hardware/uart.h"
+#include "hardware/uart.h"
 // Bibliotecas para o display
 #include "inc/ssd1306.h"
 #include "inc/font.h"
