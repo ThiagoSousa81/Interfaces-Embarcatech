@@ -2,6 +2,8 @@
 
 Testando os conhecimentos sobre o funcionamento das interfaces UART e I2C
 
+### Vídeo no Youtube [Link](https://youtu.be/0VMBLrRMPTw)
+
 ## Funcionalidades necessárias
 
 1. Modificação da Biblioteca `font.h`
